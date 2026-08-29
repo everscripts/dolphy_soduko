@@ -1,0 +1,544 @@
+# ============================================================
+
+# Android / Kotlin / Gradle .gitignore
+
+# ============================================================
+
+# ------------------------------------------------------------
+
+# Gradle
+
+# ------------------------------------------------------------
+
+.gradle/
+**/.gradle/
+
+# Gradle build output
+
+build/
+**/build/
+
+# Gradle generated files
+
+.gradle-cache/
+.gradletasknamecache
+
+# ------------------------------------------------------------
+
+# Android Studio / IntelliJ IDEA
+
+# ------------------------------------------------------------
+
+.idea/
+
+# IntelliJ project files
+
+*.iml
+*.iws
+*.ipr
+
+# Workspace files
+
+.idea/workspace.xml
+.idea/usage.statistics.xml
+.idea/dictionaries/
+.idea/shelf/
+
+# Android Studio caches
+
+.idea/caches/
+.idea/compiler.xml
+.idea/modules.xml
+.idea/jarRepositories.xml
+.idea/misc.xml
+.idea/deploymentTargetSelector.xml
+.idea/deploymentTargetDropDown.xml
+.idea/deviceManager.xml
+.idea/assetWizardSettings.xml
+
+# Android Studio generated files
+
+.idea/navEditor.xml
+.idea/preview.xml
+.idea/render.experimental.xml
+
+# ------------------------------------------------------------
+
+# Local Android SDK
+
+# ------------------------------------------------------------
+
+local.properties
+
+# ------------------------------------------------------------
+
+# Android Build Outputs
+
+# ------------------------------------------------------------
+
+*/build/
+*/out/
+out/
+
+# APK files
+
+*.apk
+*.ap_
+*.aab
+
+# Android Studio generated APK output
+
+output-metadata.json
+
+# ------------------------------------------------------------
+
+# Kotlin
+
+# ------------------------------------------------------------
+
+# Kotlin compiler output
+
+*.class
+
+# Kotlin incremental compilation
+
+.kotlin/
+
+# ------------------------------------------------------------
+
+# Java
+
+# ------------------------------------------------------------
+
+*.class
+
+# ------------------------------------------------------------
+
+# Generated Sources
+
+# ------------------------------------------------------------
+
+generated/
+**/generated/
+
+# KSP generated files
+
+**/build/generated/ksp/
+**/build/generated/ksp/debug/
+**/build/generated/ksp/release/
+
+# KAPT generated files
+
+**/build/generated/source/kapt/
+**/build/generated/source/kaptKotlin/
+
+# Data Binding generated files
+
+**/build/generated/data_binding_base_class_source_out/
+
+# Room generated schema output
+
+**/schemas/
+
+# ------------------------------------------------------------
+
+# Android Resources / Generated
+
+# ------------------------------------------------------------
+
+# Generated resource folders
+
+**/build/generated/res/
+**/build/generated/source/
+
+# Navigation Safe Args
+
+**/build/generated/source/navigation-args/
+
+# ------------------------------------------------------------
+
+# Signing / Keystores
+
+# ------------------------------------------------------------
+
+# IMPORTANT:
+
+# Never commit private signing keys.
+
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Signing configuration
+
+keystore.properties
+
+# Local signing files
+
+signing.properties
+
+# ------------------------------------------------------------
+
+# Environment / Secrets
+
+# ------------------------------------------------------------
+
+.env
+.env.*
+!.env.example
+
+*.secret
+*.secrets
+secrets.properties
+local.properties
+
+# Google service credentials
+
+google-services.json
+
+# Firebase service account credentials
+
+service-account.json
+firebase-service-account.json
+
+# Generic credentials
+
+credentials.json
+credentials*.json
+
+# Private keys
+
+*.key
+*.private
+
+# ------------------------------------------------------------
+
+# Firebase / Google Services
+
+# ------------------------------------------------------------
+
+# Uncomment if you intentionally keep google-services.json
+
+# tracked in your repository:
+
+#
+
+# !app/google-services.json
+
+# ------------------------------------------------------------
+
+# Fastlane
+
+# ------------------------------------------------------------
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+fastlane/readme.md
+
+# ------------------------------------------------------------
+
+# Android Lint
+
+# ------------------------------------------------------------
+
+lint-results*.xml
+lint-results*.html
+lint-report.html
+
+# Baseline files
+
+lint-baseline.xml
+
+# ------------------------------------------------------------
+
+# Android Profiling
+
+# ------------------------------------------------------------
+
+*.hprof
+captures/
+
+# ------------------------------------------------------------
+
+# Android Emulator
+
+# ------------------------------------------------------------
+
+# Emulator snapshots
+
+*.snap
+
+# Emulator userdata
+
+userdata-qemu.img
+userdata-qemu.img.qcow2
+
+# Emulator lock files
+
+*.lock
+
+# ------------------------------------------------------------
+
+# NDK / CMake
+
+# ------------------------------------------------------------
+
+.externalNativeBuild/
+.cxx/
+
+# NDK generated files
+
+obj/
+
+# ------------------------------------------------------------
+
+# Native Build
+
+# ------------------------------------------------------------
+
+*.so
+
+# NOTE:
+
+# If your project intentionally contains prebuilt .so libraries,
+
+# remove *.so from this section and use:
+
+#
+
+# !app/src/main/jniLibs/**/*.so
+
+# ------------------------------------------------------------
+
+# Logs
+
+# ------------------------------------------------------------
+
+*.log
+logs/
+**/logs/
+
+# ------------------------------------------------------------
+
+# Temporary Files
+
+# ------------------------------------------------------------
+
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ------------------------------------------------------------
+
+# OS Files
+
+# ------------------------------------------------------------
+
+# macOS
+
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+
+.directory
+
+# ------------------------------------------------------------
+
+# VS Code
+
+# ------------------------------------------------------------
+
+.vscode/
+
+# Keep shared VS Code configuration if desired:
+
+# !.vscode/settings.json
+
+# !.vscode/extensions.json
+
+# ------------------------------------------------------------
+
+# Eclipse
+
+# ------------------------------------------------------------
+
+.classpath
+.project
+.settings/
+
+# ------------------------------------------------------------
+
+# Maven
+
+# ------------------------------------------------------------
+
+target/
+
+# ------------------------------------------------------------
+
+# Node / Web tooling
+
+# ------------------------------------------------------------
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Frontend build output
+
+dist/
+.next/
+.nuxt/
+
+# ------------------------------------------------------------
+
+# Compose / Android Preview
+
+# ------------------------------------------------------------
+
+# Compose preview generated files
+
+**/build/intermediates/compose_previews/
+
+# ------------------------------------------------------------
+
+# Baseline Profiles
+
+# ------------------------------------------------------------
+
+# Generated baseline profile output
+
+**/build/intermediates/baseline-prof-profgen/
+**/build/intermediates/baselineprofiles/
+
+# ------------------------------------------------------------
+
+# Benchmark
+
+# ------------------------------------------------------------
+
+**/build/outputs/benchmark/
+
+# ------------------------------------------------------------
+
+# Test Reports
+
+# ------------------------------------------------------------
+
+**/build/reports/
+**/build/test-results/
+
+# ------------------------------------------------------------
+
+# Jacoco
+
+# ------------------------------------------------------------
+
+**/build/jacoco/
+*.exec
+
+# ------------------------------------------------------------
+
+# Temporary Android Studio Files
+
+# ------------------------------------------------------------
+
+*.orig
+*.rej
+
+# ------------------------------------------------------------
+
+# Dependency / Build Cache
+
+# ------------------------------------------------------------
+
+.caches/
+cache/
+**/.caches/
+
+# ------------------------------------------------------------
+
+# Compose Multiplatform / Kotlin Multiplatform
+
+# ------------------------------------------------------------
+
+.kotlin/
+**/build/
+
+# ------------------------------------------------------------
+
+# Custom Local Development
+
+# ------------------------------------------------------------
+
+# Local developer notes
+
+LOCAL_NOTES.md
+DEV_NOTES.md
+
+# Local test data
+
+local-test-data/
+test-output/
+
+# Local databases
+
+*.db
+*.sqlite
+*.sqlite3
+
+# ============================================================
+
+# IMPORTANT: Files that SHOULD remain tracked
+
+# ============================================================
+
+# Do NOT ignore:
+
+#
+
+# gradle/wrapper/gradle-wrapper.jar
+
+# gradle/wrapper/gradle-wrapper.properties
+
+# gradlew
+
+# gradlew.bat
+
+# settings.gradle.kts
+
+# build.gradle.kts
+
+# app/build.gradle.kts
+
+# gradle/libs.versions.toml
+
+# src/main/
+
+# src/test/
+
+# src/androidTest/
+
+#
+
+# These are normally required for other developers/CI systems.
+
+# ============================================================
