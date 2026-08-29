@@ -132,6 +132,9 @@ fun GameScreen(viewModel: GameViewModel) {
                 )
                 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { viewModel.exitGame() }) {
+                        Text("🏠", color = Color.White.copy(alpha = 0.8f), fontSize = 20.sp)
+                    }
                     Box(contentAlignment = Alignment.Center) {
                         IconButton(onClick = { viewModel.requestHint() }, enabled = !state.isHintLoading) {
                             Text("💡", color = Color.Yellow, fontSize = 24.sp)
@@ -216,8 +219,8 @@ fun GameScreen(viewModel: GameViewModel) {
             }
 
             Text(
-                text = "LEVEL ${state.level}",
-                color = Color.White.copy(alpha = 0.6f),
+                text = if (state.isDailyChallenge) "DAILY CHALLENGE" else "LEVEL ${state.level}",
+                color = if (state.isDailyChallenge) Color(0xFFFFB300) else Color.White.copy(alpha = 0.6f),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(top = 4.dp)

@@ -19,6 +19,10 @@ class AdManager(private val context: Context) {
     private var isAdsRemoved = false
     private var levelCount = 0
 
+    // Google Test IDs (Swap these for production IDs before publishing)
+    private val INTERSTITIAL_ID = "ca-app-pub-6166817938980403/2536283517"
+    private val REWARDED_ID = "ca-app-pub-6166817938980403/8910120170"
+
     init {
         MobileAds.initialize(context) {}
         loadInterstitial()
@@ -32,7 +36,7 @@ class AdManager(private val context: Context) {
     private fun loadInterstitial() {
         if (isAdsRemoved) return
         val adRequest = AdRequest.Builder().build()
-        InterstitialAd.load(context, "ca-app-pub-6166817938980403/2536283517", adRequest,
+        InterstitialAd.load(context, INTERSTITIAL_ID, adRequest,
             object : InterstitialAdLoadCallback() {
                 override fun onAdLoaded(ad: InterstitialAd) {
                     interstitialAd = ad
@@ -45,7 +49,7 @@ class AdManager(private val context: Context) {
 
     private fun loadRewarded() {
         val adRequest = AdRequest.Builder().build()
-        RewardedAd.load(context, "ca-app-pub-6166817938980403/8910120170", adRequest,
+        RewardedAd.load(context, REWARDED_ID, adRequest,
             object : RewardedAdLoadCallback() {
                 override fun onAdLoaded(ad: RewardedAd) {
                     rewardedAd = ad
@@ -65,7 +69,7 @@ class AdManager(private val context: Context) {
         }
     }
 
-    fun showRewarded(activity: Activity, onRewardEarned: () -> Unit, onAdDismissed: () -> Unit) {
+    fun showRewarded(activity: Activity, onRewardEarned: () -> Unit, onAdDismissed: () -> Unit, onAdFailed: () -> Unit) {
         Log.d("AdManager", "Attempting to show Rewarded Ad")
         rewardedAd?.let { ad ->
             ad.fullScreenContentCallback = object : FullScreenContentCallback() {
@@ -76,7 +80,7 @@ class AdManager(private val context: Context) {
                 }
                 override fun onAdFailedToShowFullScreenContent(error: com.google.android.gms.ads.AdError) {
                     Log.e("AdManager", "Rewarded Ad failed to show: ${error.message}")
-                    onAdDismissed()
+                    onAdFailed()
                     loadRewarded()
                 }
             }
@@ -85,8 +89,9 @@ class AdManager(private val context: Context) {
                 onRewardEarned()
             }
         } ?: run {
-            Log.d("AdManager", "Rewarded Ad not loaded yet, granting reward anyway for testing")
-            onRewardEarned() 
+            Log.d("AdManager", "Rewarded Ad not loaded yet")
+            onAdFailed()
+            loadRewarded() // Try to reload for next time
         }
     }
 }

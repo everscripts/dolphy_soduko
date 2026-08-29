@@ -2,6 +2,8 @@ package com.everscripts.dolphy_soduko.domain.logic
 
 import com.everscripts.dolphy_soduko.model.Bottle
 import com.everscripts.dolphy_soduko.model.Segment
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import java.util.*
 
 object GameSolver {
@@ -12,7 +14,7 @@ object GameSolver {
      * Finds the next best move using a priority-based search.
      * Heuristic: Minimize the total number of "color breaks" (adjacent different colors) in bottles.
      */
-    fun solve(initialBottles: List<Bottle>): List<Move>? {
+    suspend fun solve(initialBottles: List<Bottle>): List<Move>? {
         val queue = PriorityQueue<Node>(compareBy { it.cost + it.heuristic })
         val visited = mutableSetOf<List<List<Segment>>>()
 
@@ -22,9 +24,12 @@ object GameSolver {
 
         var nodesVisited = 0
         while (queue.isNotEmpty()) {
+            // Cooperative cancellation: Stop immediately if the job was cancelled
+            currentCoroutineContext().ensureActive()
+
             val current = queue.poll()!!
             nodesVisited++
-            
+
             if (PourRuleEngine.isGameWon(current.bottles)) {
                 return current.path
             }
@@ -36,7 +41,7 @@ object GameSolver {
                     if (PourRuleEngine.canPour(src, dst)) {
                         val nextBottles = PourRuleEngine.pour(current.bottles, src.id, dst.id)
                         val normalized = nextBottles.map { b -> b.segments.map { it.type } }
-                        
+
                         if (!visited.contains(normalized)) {
                             visited.add(normalized)
                             val nextPath = current.path + Move(src.id, dst.id)
@@ -45,7 +50,7 @@ object GameSolver {
                     }
                 }
             }
-            
+
             // Limit search space for performance on mobile
             if (nodesVisited > 8000) break
         }
@@ -71,7 +76,7 @@ object GameSolver {
     }
 
     private data class Node(
-        val bottles: List<Bottle>, 
+        val bottles: List<Bottle>,
         val path: List<Move>,
         val cost: Int,
         val heuristic: Int

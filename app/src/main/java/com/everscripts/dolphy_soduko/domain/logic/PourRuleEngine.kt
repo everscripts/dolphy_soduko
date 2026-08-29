@@ -52,6 +52,30 @@ object PourRuleEngine {
     }
 
     /**
+     * Moves exactly one segment from source to target.
+     */
+    fun moveOne(bottles: List<Bottle>, sourceId: Int, targetId: Int): List<Bottle> {
+        val source = bottles.find { it.id == sourceId } ?: return bottles
+        val target = bottles.find { it.id == targetId } ?: return bottles
+        
+        if (!canPour(source, target)) return bottles
+
+        val sourceSegments = source.segments.toMutableList()
+        val targetSegments = target.segments.toMutableList()
+        
+        val segment = sourceSegments.removeAt(sourceSegments.size - 1)
+        targetSegments.add(segment.copy(isHidden = false))
+        
+        return bottles.map { bottle ->
+            when (bottle.id) {
+                sourceId -> bottle.copy(segments = sourceSegments).revealTop()
+                targetId -> bottle.copy(segments = targetSegments)
+                else -> bottle
+            }
+        }
+    }
+
+    /**
      * Calculates how many segments will be poured.
      */
     fun calculatePourCount(source: Bottle, target: Bottle): Int {

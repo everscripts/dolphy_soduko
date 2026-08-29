@@ -12,10 +12,12 @@ import com.everscripts.dolphy_soduko.model.Bottle
 import com.everscripts.dolphy_soduko.presentation.theme.DolphySkin
 import com.everscripts.dolphy_soduko.presentation.theme.GameSkin
 import com.everscripts.dolphy_soduko.presentation.theme.SkinManager
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.Job
+
+enum class Screen {
+    HOME, GAME
+}
 
 data class PourAnimation(
     val sourceId: Int,
@@ -40,7 +42,10 @@ data class GameState(
     val isAnimating: Boolean = false,
     val waterColorHex: String = "FF2196F3",
     val isHintLoading: Boolean = false,
-    val freeHintsUsed: Int = 0
+    val freeHintsUsed: Int = 0,
+    val currentScreen: Screen = Screen.HOME,
+    val exitEvent: Boolean = false,
+    val isDailyChallenge: Boolean = false
 )
 
 class GameViewModel(
@@ -97,9 +102,41 @@ class GameViewModel(
         hintJob?.cancel()
         levelGenerator = LevelGenerator(seed = level.toLong())
         val bottles = levelGenerator.generate(level)
-        _state.update { it.copy(level = level, bottles = bottles, isWon = false, selectedBottleId = null, hint = null, isHintLoading = false) }
+        _state.update { it.copy(
+            level = level, 
+            bottles = bottles, 
+            isWon = false, 
+            selectedBottleId = null, 
+            hint = null, 
+            isHintLoading = false,
+            isDailyChallenge = false
+        ) }
         viewModelScope.launch {
             settingsRepository.setLevel(level)
+        }
+    }
+
+    fun loadDailyChallenge() {
+        hintJob?.cancel()
+        _state.update { it.copy(isAnimating = true) } // Show loading or prevent clicks
+        
+        viewModelScope.launch {
+            // Use current day as seed for a new challenge every day
+            val daySeed = System.currentTimeMillis() / (1000 * 60 * 60 * 24)
+            val bottles = withContext(Dispatchers.Default) {
+                LevelGenerator(seed = daySeed).generateHardLevel()
+            }
+            
+            _state.update { it.copy(
+                bottles = bottles,
+                isWon = false,
+                selectedBottleId = null,
+                hint = null,
+                isHintLoading = false,
+                isDailyChallenge = true,
+                currentScreen = Screen.GAME,
+                isAnimating = false
+            ) }
         }
     }
 
@@ -126,25 +163,40 @@ class GameViewModel(
             val targetBottle = currentState.bottles.find { it.id == bottleId }!!
 
             if (PourRuleEngine.canPour(sourceBottle, targetBottle)) {
-                val pourCount = PourRuleEngine.calculatePourCount(sourceBottle, targetBottle)
+                val totalPourCount = PourRuleEngine.calculatePourCount(sourceBottle, targetBottle)
                 
                 viewModelScope.launch {
                     _state.update { it.copy(
                         isAnimating = true,
-                        pourAnimation = PourAnimation(sourceId, bottleId, pourCount),
                         selectedBottleId = null
                     )}
+
+                    var currentBottles = currentState.bottles
                     
-                    delay(600) // Pour animation duration
+                    repeat(totalPourCount) {
+                        // Trigger animation for 1 fish
+                        _state.update { it.copy(
+                            pourAnimation = PourAnimation(sourceId, bottleId, 1)
+                        )}
+                        
+                        delay(600) // Fish leap duration
+                        
+                        // Execute logic for 1 fish
+                        currentBottles = PourRuleEngine.moveOne(currentBottles, sourceId, bottleId)
+                        
+                        _state.update { it.copy(
+                            bottles = currentBottles,
+                            pourAnimation = null
+                        )}
+                        
+                        delay(50) // Small gap between fish
+                    }
                     
-                    val newBottles = PourRuleEngine.pour(currentState.bottles, sourceId, bottleId)
-                    val isWon = PourRuleEngine.isGameWon(newBottles)
+                    val isWon = PourRuleEngine.isGameWon(currentBottles)
                     _state.update { it.copy(
-                        bottles = newBottles,
                         isWon = isWon,
                         isAnimating = false,
-                        pourAnimation = null,
-                        hint = null // Clear hint after move
+                        hint = null
                     )}
                 }
             } else {
@@ -159,11 +211,18 @@ class GameViewModel(
     }
 
     fun nextLevel() {
+        if (_state.value.isDailyChallenge) {
+            exitGame()
+            return
+        }
         val nextLevel = _state.value.level + 1
         loadLevel(nextLevel)
+        // Ads temporarily disabled
+        /*
         if (!_state.value.isAdsRemoved && nextLevel % 3 == 0) {
             _state.update { it.copy(showAd = true) }
         }
+        */
     }
 
     fun onAdShown() {
@@ -179,6 +238,10 @@ class GameViewModel(
             return
         }
 
+        // Ads temporarily disabled: Always give hint
+        getHint()
+        
+        /* 
         if (s.isAdsRemoved || s.freeHintsUsed < 5) {
             getHint()
             if (!s.isAdsRemoved) {
@@ -189,6 +252,19 @@ class GameViewModel(
         } else {
             _state.update { it.copy(requestHintAd = true) }
         }
+        */
+    }
+
+    fun enterGame() {
+        _state.update { it.copy(currentScreen = Screen.GAME) }
+    }
+
+    fun exitGame() {
+        _state.update { it.copy(currentScreen = Screen.HOME) }
+    }
+
+    fun quitApp() {
+        _state.update { it.copy(exitEvent = true) }
     }
 
     fun onHintAdShown() {
@@ -197,6 +273,10 @@ class GameViewModel(
     }
 
     fun onHintAdDismissed() {
+        _state.update { it.copy(requestHintAd = false) }
+    }
+
+    fun onHintAdFailed() {
         _state.update { it.copy(requestHintAd = false) }
     }
 
@@ -237,20 +317,34 @@ class GameViewModel(
     }
 
     fun getHint() {
+        val currentBottles = _state.value.bottles
+        if (currentBottles.isEmpty()) return
+
         Log.d("GameViewModel", "Getting hint...")
         hintJob?.cancel()
         _state.update { it.copy(isHintLoading = true, hint = null) }
         
         hintJob = viewModelScope.launch {
-
-            val solution = GameSolver.solve(_state.value.bottles)
-            _state.update { it.copy(isHintLoading = false) }
-            if (solution != null && solution.isNotEmpty()) {
-                val hintMove = solution.first()
-                Log.d("GameViewModel", "Hint found: ${hintMove.fromId} -> ${hintMove.toId}")
-                _state.update { it.copy(hint = hintMove) }
-            } else {
-                Log.d("GameViewModel", "No hint found or search limit reached")
+            try {
+                val solution = withContext(Dispatchers.Default) {
+                    GameSolver.solve(currentBottles)
+                }
+                
+                if (solution != null && solution.isNotEmpty()) {
+                    val hintMove = solution.first()
+                    Log.d("GameViewModel", "Hint found: ${hintMove.fromId} -> ${hintMove.toId}")
+                    _state.update { it.copy(hint = hintMove) }
+                } else {
+                    Log.d("GameViewModel", "No hint found or search limit reached")
+                }
+            } catch (e: CancellationException) {
+                Log.d("GameViewModel", "Hint search cancelled")
+                throw e // Propagate cancellation
+            } catch (e: Exception) {
+                Log.e("GameViewModel", "Error during hint search", e)
+            } finally {
+                // Guaranteed to run even if cancelled, fixing the spinner leak
+                _state.update { it.copy(isHintLoading = false) }
             }
         }
     }

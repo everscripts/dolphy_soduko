@@ -90,4 +90,60 @@ class LevelGenerator(private val seed: Long) {
             bottle.copy(segments = newSegments)
         }
     }
+
+    /**
+     * Generates a fixed high-difficulty level for the Daily Challenge.
+     */
+    fun generateHardLevel(): List<Bottle> {
+        val colorCount = 9
+        val emptyBottles = 1
+        val filledBottlesCount = 10 - emptyBottles
+        val actualColorCount = 9
+
+        // 1. Initialize solved state
+        val bottles = mutableListOf<Bottle>()
+        for (i in 0 until actualColorCount) {
+            val segments = List(4) { GameSegment(Segment.fromId(i), isHidden = false) }
+            bottles.add(Bottle(id = i, segments = segments))
+        }
+        
+        // Final bottle
+        bottles.add(Bottle(id = 9, segments = emptyList()))
+
+        // 2. Scramble heavily (200 moves)
+        repeat(250) {
+            val nonEmpty = bottles.filter { !it.isEmpty }
+            val nonFull = bottles.filter { !it.isFull }
+            
+            if (nonEmpty.isNotEmpty() && nonFull.isNotEmpty()) {
+                val src = nonEmpty.random(random)
+                val dst = nonFull.filter { it.id != src.id }.randomOrNull(random)
+                
+                if (dst != null) {
+                    val segment = src.segments.last()
+                    val newSrcSegments = src.segments.dropLast(1)
+                    val newDstSegments = dst.segments + segment
+                    
+                    val srcIndex = bottles.indexOfFirst { it.id == src.id }
+                    val dstIndex = bottles.indexOfFirst { it.id == dst.id }
+                    
+                    bottles[srcIndex] = src.copy(segments = newSrcSegments)
+                    bottles[dstIndex] = dst.copy(segments = newDstSegments)
+                }
+            }
+        }
+
+        // 3. Max Mystery (70% probability)
+        return bottles.map { bottle ->
+            if (bottle.isEmpty) return@map bottle
+            val newSegments = bottle.segments.mapIndexed { index, segment ->
+                if (index == bottle.segments.size - 1) {
+                    segment.copy(isHidden = false)
+                } else {
+                    segment.copy(isHidden = random.nextFloat() < 0.7f)
+                }
+            }
+            bottle.copy(segments = newSegments)
+        }
+    }
 }

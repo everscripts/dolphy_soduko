@@ -1,5 +1,6 @@
 package com.everscripts.dolphy_soduko
 
+import android.widget.Toast
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,6 +20,8 @@ import com.everscripts.dolphy_soduko.util.HapticManager
 import com.everscripts.dolphy_soduko.data.repository.BillingRepository
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.everscripts.dolphy_soduko.presentation.game.HomeScreen
+import com.everscripts.dolphy_soduko.presentation.game.Screen
 
 class MainActivity : ComponentActivity() {
     
@@ -93,7 +96,11 @@ class MainActivity : ComponentActivity() {
                     adManager.showRewarded(
                         activity = this@MainActivity,
                         onRewardEarned = { viewModel.onHintAdShown() },
-                        onAdDismissed = { viewModel.onHintAdDismissed() }
+                        onAdDismissed = { viewModel.onHintAdDismissed() },
+                        onAdFailed = {
+                            Toast.makeText(this@MainActivity, "Ad not ready, please try again.", Toast.LENGTH_SHORT).show()
+                            viewModel.onHintAdFailed()
+                        }
                     )
                 }
             }
@@ -102,8 +109,18 @@ class MainActivity : ComponentActivity() {
                 adManager.setAdsRemoved(state.isAdsRemoved)
             }
 
+            LaunchedEffect(state.exitEvent) {
+                if (state.exitEvent) {
+                    finish()
+                }
+            }
+
             Dolphy_sodukoTheme {
-                GameScreen(viewModel)
+                if (state.currentScreen == Screen.HOME) {
+                    HomeScreen(viewModel)
+                } else {
+                    GameScreen(viewModel)
+                }
             }
         }
     }

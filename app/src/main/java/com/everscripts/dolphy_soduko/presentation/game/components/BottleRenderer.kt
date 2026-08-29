@@ -111,19 +111,6 @@ fun BottleView(
         label = "wavePhase"
     )
 
-    val hintGlow by animateColorAsState(
-        targetValue = when {
-            isHintSource -> Color.Yellow
-            isHintTarget -> Color.Cyan
-            else -> Color.Transparent
-        },
-        animationSpec = infiniteRepeatable(
-            animation = tween(700),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "hintGlow"
-    )
-
     val selectionOffset by animateDpAsState(
         targetValue = if (isSelected) (-15).dp else 0.dp,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
@@ -172,19 +159,18 @@ fun BottleView(
                 quadraticTo(rightX, flareHeight / 2, width, 0f)
             }
             
-            // 1. Hint Glow
-            if (hintGlow != Color.Transparent) {
-                // Primary glow stroke
+            // 1. Static Hint Highlight (Simple, non-animated)
+            val hintColor = when {
+                isHintSource -> Color.Yellow
+                isHintTarget -> Color.Cyan
+                else -> null
+            }
+            
+            if (hintColor != null) {
                 drawPath(
                     path = bottlePath,
-                    color = hintGlow.copy(alpha = 0.8f),
-                    style = Stroke(width = 8.dp.toPx(), cap = StrokeCap.Round)
-                )
-                // Outer soft halo pulse
-                drawPath(
-                    path = bottlePath,
-                    color = hintGlow.copy(alpha = 0.3f),
-                    style = Stroke(width = 16.dp.toPx(), cap = StrokeCap.Round)
+                    color = hintColor,
+                    style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
                 )
             }
             
