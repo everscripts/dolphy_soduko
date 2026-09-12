@@ -20,6 +20,7 @@ class SettingsRepository(private val context: Context) {
         val ADS_REMOVED = booleanPreferencesKey("ads_removed")
         val WATER_COLOR = stringPreferencesKey("water_color")
         val FREE_HINTS_USED = intPreferencesKey("free_hints_used")
+        val STARS_BALANCE = intPreferencesKey("stars_balance")
     }
 
     val sfxEnabled: Flow<Boolean> = context.dataStore.data.map { it[Keys.SFX_ENABLED] ?: true }
@@ -30,6 +31,7 @@ class SettingsRepository(private val context: Context) {
     val adsRemoved: Flow<Boolean> = context.dataStore.data.map { it[Keys.ADS_REMOVED] ?: false }
     val waterColor: Flow<String> = context.dataStore.data.map { it[Keys.WATER_COLOR] ?: "FF2196F3" } // Default Blue
     val freeHintsUsed: Flow<Int> = context.dataStore.data.map { it[Keys.FREE_HINTS_USED] ?: 0 }
+    val starsBalance: Flow<Int> = context.dataStore.data.map { it[Keys.STARS_BALANCE] ?: 0 }
 
     suspend fun toggleSfx(enabled: Boolean) {
         context.dataStore.edit { it[Keys.SFX_ENABLED] = enabled }
@@ -63,6 +65,20 @@ class SettingsRepository(private val context: Context) {
         context.dataStore.edit { 
             val current = it[Keys.FREE_HINTS_USED] ?: 0
             it[Keys.FREE_HINTS_USED] = current + 1
+        }
+    }
+
+    suspend fun addStars(amount: Int) {
+        context.dataStore.edit { 
+            val current = it[Keys.STARS_BALANCE] ?: 0
+            it[Keys.STARS_BALANCE] = current + amount
+        }
+    }
+
+    suspend fun spendStars(amount: Int) {
+        context.dataStore.edit { 
+            val current = it[Keys.STARS_BALANCE] ?: 0
+            it[Keys.STARS_BALANCE] = (current - amount).coerceAtLeast(0)
         }
     }
 }

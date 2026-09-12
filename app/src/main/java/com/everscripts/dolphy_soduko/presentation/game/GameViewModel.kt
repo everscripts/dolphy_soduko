@@ -45,7 +45,10 @@ data class GameState(
     val freeHintsUsed: Int = 0,
     val currentScreen: Screen = Screen.HOME,
     val exitEvent: Boolean = false,
-    val isDailyChallenge: Boolean = false
+    val isDailyChallenge: Boolean = false,
+    val starsBalance: Int = 0,
+    val coinBurstAmount: Int = 0,
+    val coinBurstVisible: Boolean = false
 )
 
 class GameViewModel(
@@ -57,44 +60,57 @@ class GameViewModel(
 
     private lateinit var levelGenerator: LevelGenerator
     private var hintJob: Job? = null
+    private var lastKnownStarsBalance: Int = 0
 
     init {
         viewModelScope.launch {
+            lastKnownStarsBalance = settingsRepository.starsBalance.first()
+
+            // Observe settings separately to avoid infinite loops with level loading
             combine(
-                settingsRepository.currentLevel,
                 settingsRepository.activeSkin,
                 settingsRepository.sfxEnabled,
                 settingsRepository.bgmEnabled,
                 settingsRepository.hapticsEnabled,
                 settingsRepository.adsRemoved,
                 settingsRepository.waterColor,
-                settingsRepository.freeHintsUsed
+                settingsRepository.freeHintsUsed,
+                settingsRepository.starsBalance
             ) { args ->
-                val level = args[0] as Int
-                val skinName = args[1] as String
-                val sfx = args[2] as Boolean
-                val bgm = args[3] as Boolean
-                val haptics = args[4] as Boolean
-                val adsRemoved = args[5] as Boolean
-                val waterColorHex = args[6] as String
-                val hintsUsed = args[7] as Int
-                
-                _state.update { 
-                    it.copy(
-                        level = level,
+                val skinName = args[0] as String
+                val sfx = args[1] as Boolean
+                val bgm = args[2] as Boolean
+                val haptics = args[3] as Boolean
+                val adsRemoved = args[4] as Boolean
+                val waterColorHex = args[5] as String
+                val hintsUsed = args[6] as Int
+                val stars = args[7] as Int
+
+                _state.update {
+                    val nextCoinBurst = if (stars > lastKnownStarsBalance) stars - lastKnownStarsBalance else 0
+                    val updatedState = it.copy(
                         skin = SkinManager.getSkin(skinName, Color(android.graphics.Color.parseColor("#$waterColorHex"))),
                         sfxEnabled = sfx,
                         bgmEnabled = bgm,
                         hapticsEnabled = haptics,
                         isAdsRemoved = adsRemoved,
                         waterColorHex = waterColorHex,
-                        freeHintsUsed = hintsUsed
+                        freeHintsUsed = hintsUsed,
+                        starsBalance = stars,
+                        coinBurstAmount = if (nextCoinBurst > 0) nextCoinBurst else it.coinBurstAmount,
+                        coinBurstVisible = if (nextCoinBurst > 0) true else it.coinBurstVisible
                     )
+                    updatedState
                 }
-                if (_state.value.bottles.isEmpty()) {
-                    loadLevel(level)
-                }
+
+                lastKnownStarsBalance = stars
             }.collect()
+        }
+
+        // Load level once at startup
+        viewModelScope.launch {
+            val savedLevel = settingsRepository.currentLevel.first()
+            loadLevel(savedLevel)
         }
     }
 
@@ -118,10 +134,9 @@ class GameViewModel(
 
     fun loadDailyChallenge() {
         hintJob?.cancel()
-        _state.update { it.copy(isAnimating = true) } // Show loading or prevent clicks
+        _state.update { it.copy(isAnimating = true) } 
         
         viewModelScope.launch {
-            // Use current day as seed for a new challenge every day
             val daySeed = System.currentTimeMillis() / (1000 * 60 * 60 * 24)
             val bottles = withContext(Dispatchers.Default) {
                 LevelGenerator(seed = daySeed).generateHardLevel()
@@ -144,20 +159,16 @@ class GameViewModel(
         val currentState = _state.value
         if (currentState.isWon || currentState.isAnimating) return
 
-        // Clear active hint and stop searching immediately on any interaction
         hintJob?.cancel()
         _state.update { it.copy(hint = null, isHintLoading = false) }
 
         if (currentState.selectedBottleId == null) {
-            // Select bottle if not empty
             if (currentState.bottles.find { it.id == bottleId }?.isEmpty == false) {
                 _state.update { it.copy(selectedBottleId = bottleId) }
             }
         } else if (currentState.selectedBottleId == bottleId) {
-            // Deselect
             _state.update { it.copy(selectedBottleId = null) }
         } else {
-            // Try pour
             val sourceId = currentState.selectedBottleId!!
             val sourceBottle = currentState.bottles.find { it.id == sourceId }!!
             val targetBottle = currentState.bottles.find { it.id == bottleId }!!
@@ -174,14 +185,12 @@ class GameViewModel(
                     var currentBottles = currentState.bottles
                     
                     repeat(totalPourCount) {
-                        // Trigger animation for 1 fish
                         _state.update { it.copy(
                             pourAnimation = PourAnimation(sourceId, bottleId, 1)
                         )}
                         
-                        delay(600) // Fish leap duration
+                        delay(600) 
                         
-                        // Execute logic for 1 fish
                         currentBottles = PourRuleEngine.moveOne(currentBottles, sourceId, bottleId)
                         
                         _state.update { it.copy(
@@ -189,10 +198,14 @@ class GameViewModel(
                             pourAnimation = null
                         )}
                         
-                        delay(50) // Small gap between fish
+                        delay(50) 
                     }
                     
                     val isWon = PourRuleEngine.isGameWon(currentBottles)
+                    if (isWon && !currentState.isDailyChallenge) {
+                        settingsRepository.addStars(10)
+                    }
+
                     _state.update { it.copy(
                         isWon = isWon,
                         isAnimating = false,
@@ -200,7 +213,6 @@ class GameViewModel(
                     )}
                 }
             } else {
-                // Invalid move, just deselect or select new source if not empty
                 if (currentState.bottles.find { it.id == bottleId }?.isEmpty == false) {
                     _state.update { it.copy(selectedBottleId = bottleId) }
                 } else {
@@ -217,42 +229,37 @@ class GameViewModel(
         }
         val nextLevel = _state.value.level + 1
         loadLevel(nextLevel)
-        // Ads temporarily disabled
-        /*
-        if (!_state.value.isAdsRemoved && nextLevel % 3 == 0) {
-            _state.update { it.copy(showAd = true) }
-        }
-        */
     }
 
     fun onAdShown() {
         _state.update { it.copy(showAd = false) }
     }
 
+    fun clearCoinBurst() {
+        _state.update { it.copy(coinBurstVisible = false, coinBurstAmount = 0) }
+    }
+
     fun requestHint() {
         val s = _state.value
         
-        // Toggle Logic: If a hint is currently visible, click to hide it
         if (s.hint != null) {
             _state.update { it.copy(hint = null) }
             return
         }
 
-        // Ads temporarily disabled: Always give hint
-        getHint()
-        
-        /* 
-        if (s.isAdsRemoved || s.freeHintsUsed < 5) {
-            getHint()
-            if (!s.isAdsRemoved) {
+        if (s.isDailyChallenge) {
+            if (s.starsBalance >= 20) {
                 viewModelScope.launch {
-                    settingsRepository.incrementFreeHints()
+                    settingsRepository.spendStars(20)
+                    getHint()
                 }
+            } else {
+                // Trigger a generic event or use a state flag for UI feedback
+                Log.d("GameViewModel", "Insufficient stars for Daily Challenge hint")
             }
         } else {
-            _state.update { it.copy(requestHintAd = true) }
+            getHint()
         }
-        */
     }
 
     fun enterGame() {
@@ -287,7 +294,7 @@ class GameViewModel(
 
     fun toggleSkin() {
         viewModelScope.launch {
-            val nextSkin = if (_state.value.skin.name == "DOLPHY") "JELLYFISH" else "DOLPHY"
+            val nextSkin = if (_state.value.skin.name == "FISHY") "JELLYFISH" else "FISHY"
             settingsRepository.setActiveSkin(nextSkin)
         }
     }
@@ -339,11 +346,10 @@ class GameViewModel(
                 }
             } catch (e: CancellationException) {
                 Log.d("GameViewModel", "Hint search cancelled")
-                throw e // Propagate cancellation
+                throw e 
             } catch (e: Exception) {
                 Log.e("GameViewModel", "Error during hint search", e)
             } finally {
-                // Guaranteed to run even if cancelled, fixing the spinner leak
                 _state.update { it.copy(isHintLoading = false) }
             }
         }

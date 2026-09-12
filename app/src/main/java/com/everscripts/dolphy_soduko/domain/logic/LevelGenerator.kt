@@ -28,7 +28,7 @@ class LevelGenerator(private val seed: Long) {
         // Ensure we don't have more colors than filled bottles
         val actualColorCount = colorCount.coerceAtMost(filledBottlesCount)
 
-        // 2. Initialize solved state
+        // 2. xInitialize solved state
         val bottles = mutableListOf<Bottle>()
         for (i in 0 until actualColorCount) {
             val segments = List(4) { GameSegment(Segment.fromId(i), isHidden = false) }
@@ -93,12 +93,13 @@ class LevelGenerator(private val seed: Long) {
 
     /**
      * Generates a fixed high-difficulty level for the Daily Challenge.
+     * Balanced for human solvability.
      */
     fun generateHardLevel(): List<Bottle> {
-        val colorCount = 9
-        val emptyBottles = 1
+        val colorCount = 8
+        val emptyBottles = 2
         val filledBottlesCount = 10 - emptyBottles
-        val actualColorCount = 9
+        val actualColorCount = colorCount
 
         // 1. Initialize solved state
         val bottles = mutableListOf<Bottle>()
@@ -107,11 +108,13 @@ class LevelGenerator(private val seed: Long) {
             bottles.add(Bottle(id = i, segments = segments))
         }
         
-        // Final bottle
-        bottles.add(Bottle(id = 9, segments = emptyList()))
+        // Add empty bottles for workspace
+        for (i in actualColorCount until 10) {
+            bottles.add(Bottle(id = i, segments = emptyList()))
+        }
 
-        // 2. Scramble heavily (200 moves)
-        repeat(250) {
+        // 2. Scramble moderately (120 moves)
+        repeat(120) {
             val nonEmpty = bottles.filter { !it.isEmpty }
             val nonFull = bottles.filter { !it.isFull }
             
@@ -133,14 +136,14 @@ class LevelGenerator(private val seed: Long) {
             }
         }
 
-        // 3. Max Mystery (70% probability)
+        // 3. Moderate Mystery (40% probability)
         return bottles.map { bottle ->
             if (bottle.isEmpty) return@map bottle
             val newSegments = bottle.segments.mapIndexed { index, segment ->
                 if (index == bottle.segments.size - 1) {
                     segment.copy(isHidden = false)
                 } else {
-                    segment.copy(isHidden = random.nextFloat() < 0.7f)
+                    segment.copy(isHidden = random.nextFloat() < 0.4f)
                 }
             }
             bottle.copy(segments = newSegments)

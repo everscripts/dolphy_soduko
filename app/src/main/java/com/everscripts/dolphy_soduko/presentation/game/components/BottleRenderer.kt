@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.everscripts.dolphy_soduko.model.Bottle
 import com.everscripts.dolphy_soduko.model.Segment
 import com.everscripts.dolphy_soduko.presentation.theme.GameSkin
+import kotlinx.coroutines.delay
 import kotlin.math.sin
 
 /**
@@ -89,7 +90,30 @@ fun BottleView(
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "bottleAnimations")
     
-    // Swimming drift animation
+    var showCompletionEffect by remember { mutableStateOf(false) }
+    val completionBurst = remember { Animatable(0f) }
+
+    LaunchedEffect(bottle.isSolved) {
+        if (bottle.isSolved) {
+            showCompletionEffect = true
+            completionBurst.snapTo(0f)
+            completionBurst.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(900, easing = FastOutSlowInEasing)
+            )
+            delay(5000)
+            completionBurst.animateTo(
+                targetValue = 0f,
+                animationSpec = tween(400, easing = FastOutSlowInEasing)
+            )
+            showCompletionEffect = false
+        } else {
+            showCompletionEffect = false
+            completionBurst.snapTo(0f)
+        }
+    }
+
+    // Swimming drift animation: keep active only while bottle is not solved.
     val swimOffset by infiniteTransition.animateFloat(
         initialValue = -5f,
         targetValue = 5f,
@@ -100,7 +124,7 @@ fun BottleView(
         label = "swimOffset"
     )
 
-    // Water wave animation
+    // Water wave animation: stop on solved bottles; keep active elsewhere.
     val wavePhase by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 2f * Math.PI.toFloat(),
@@ -111,16 +135,33 @@ fun BottleView(
         label = "wavePhase"
     )
 
+    val waveMotion = if (showCompletionEffect) 0f else wavePhase
+    val swimMotion = if (showCompletionEffect) 0f else swimOffset
+    val isSolvedPulse = if (showCompletionEffect) 1f + (completionBurst.value * 0.12f) else 1f
+
     val selectionOffset by animateDpAsState(
         targetValue = if (isSelected) (-15).dp else 0.dp,
         animationSpec = spring(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessLow),
         label = "selectionOffset"
     )
 
+    // Solved Pulse Animation
+    val solvedPulse by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = if (bottle.isSolved) 1.08f else 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1000, easing = LinearOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "solvedPulse"
+    )
+
     Box(
         modifier = modifier
             .offset(y = selectionOffset)
             .graphicsLayer {
+                scaleX = if (bottle.isSolved) isSolvedPulse else solvedPulse
+                scaleY = if (bottle.isSolved) isSolvedPulse else solvedPulse
                 cameraDistance = 12f * density
             }
             .aspectRatio(0.4f)
@@ -196,12 +237,34 @@ fun BottleView(
                 
                 // Wave top
                 for (x in width.toInt() downTo 0 step 5) {
-                    val y = waterTopY + sin(x * 0.05f + wavePhase) * 3.dp.toPx()
+                    val y = waterTopY + sin(x * 0.05f + waveMotion) * 3.dp.toPx()
                     lineTo(x.toFloat(), y)
                 }
                 close()
             }
-            
+
+            if (bottle.isSolved && completionBurst.value > 0f) {
+                val rippleProgress = completionBurst.value
+                val rippleRadius = (width * 0.35f) + (rippleProgress * width * 0.5f)
+                drawCircle(
+                    color = Color.White.copy(alpha = (1f - rippleProgress) * 0.45f),
+                    radius = rippleRadius,
+                    center = Offset(width / 2f, flareHeight + 12.dp.toPx())
+                )
+                drawCircle(
+                    color = Color.White.copy(alpha = (1f - rippleProgress) * 0.25f),
+                    radius = rippleRadius * 1.25f,
+                    center = Offset(width / 2f, flareHeight + 12.dp.toPx())
+                )
+
+                val fishY = flareHeight + (height - flareHeight) * (0.2f + 0.65f * (1f - rippleProgress))
+                drawDolphy(
+                    center = Offset(width / 2f, fishY),
+                    color = waterColor.copy(alpha = 0.85f),
+                    size = Size(bodyWidth * 0.42f, height * 0.14f)
+                )
+            }
+
             clipPath(bottlePath) {
                 drawPath(
                     path = fullWaterPath,
@@ -231,7 +294,7 @@ fun BottleView(
                 }
                 
                 // Swimming Dolphy Fish
-                val fishX = (width / 2) + swimOffset.dp.toPx()
+                val fishX = (width / 2) + swimMotion.dp.toPx()
                 val fishY = segmentY + (segmentHeight / 2)
                 drawDolphy(
                     center = Offset(fishX, fishY),
@@ -253,12 +316,25 @@ fun BottleView(
             drawPath(
                 path = bottlePath,
                 brush = Brush.linearGradient(
-                    colors = listOf(skin.bottleStrokeColor, Color.White.copy(alpha = 0.8f), skin.bottleStrokeColor),
+                    colors = if (showCompletionEffect) {
+                        listOf(Color.Yellow.copy(alpha = completionBurst.value), Color.White.copy(alpha = 0.8f), Color.Yellow.copy(alpha = completionBurst.value))
+                    } else {
+                        listOf(skin.bottleStrokeColor, Color.White.copy(alpha = 0.8f), skin.bottleStrokeColor)
+                    },
                     start = Offset(0f, 0f),
                     end = Offset(width, height)
                 ),
-                style = Stroke(width = 2.5.dp.toPx(), cap = StrokeCap.Round)
+                style = Stroke(width = if (showCompletionEffect) (4.dp.toPx() * (0.4f + completionBurst.value)) else 2.5.dp.toPx(), cap = StrokeCap.Round)
             )
+
+            // 7. Temporary completion halo
+            if (showCompletionEffect) {
+                drawCircle(
+                    color = Color.White.copy(alpha = (0.18f * completionBurst.value).coerceIn(0f, 0.18f)),
+                    radius = (width * 0.8f) * (1.0f + completionBurst.value * 0.3f),
+                    center = Offset(width / 2, height / 2)
+                )
+            }
         }
     }
 }

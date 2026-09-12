@@ -15,7 +15,7 @@ interface GameSkin {
 }
 
 object DolphySkin : GameSkin {
-    override val name: String = "DOLPHY"
+    override val name: String = "FISHY"
     override val backgroundBrush: Brush = Brush.verticalGradient(
         colors = listOf(Color(0xFF0D47A1), Color(0xFF1976D2))
     )

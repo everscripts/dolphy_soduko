@@ -1,5 +1,7 @@
 package com.everscripts.dolphy_soduko.presentation.game
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -11,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import com.everscripts.dolphy_soduko.presentation.game.components.PremiumActionButton
+import com.everscripts.dolphy_soduko.presentation.game.components.PremiumCoinBalance
 
 @Composable
 fun HomeScreen(viewModel: GameViewModel) {
@@ -19,33 +23,75 @@ fun HomeScreen(viewModel: GameViewModel) {
     Box(modifier = Modifier.fillMaxSize()) {
         LivingBackground()
 
+        PremiumCoinBalance(
+            balance = state.starsBalance,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(top = 42.dp, end = 20.dp)
+        )
+
         Column(
-            modifier = Modifier.fillMaxSize().padding(32.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 22.dp, vertical = 22.dp)
+                .padding(bottom = 96.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(52.dp)
+                        .background(
+                            brush = androidx.compose.ui.graphics.Brush.linearGradient(listOf(Color(0xFFFFD166), Color(0xFFFFB300))),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        )
+                        .border(1.dp, Color.White.copy(alpha = 0.5f), androidx.compose.foundation.shape.CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Star,
+                        contentDescription = null,
+                        tint = Color(0xFF7A4F00),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+                Spacer(Modifier.width(12.dp))
+                Text(
+                    text = "DOLPHY",
+                    color = Color.White,
+                    fontSize = 30.sp,
+                    fontWeight = FontWeight.Black,
+                    letterSpacing = 6.sp
+                )
+            }
+
             Text(
-                text = "DOLPHY\nPUZZLE",
-                color = Color.White,
-                fontSize = 48.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 8.sp,
-                lineHeight = 56.sp,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                text = "PUZZLE",
+                color = Color(0xFFB8E6FF),
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 10.sp,
+                modifier = Modifier.padding(top = 6.dp)
             )
 
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(26.dp))
 
-            // Progress Display
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.1f)),
-                modifier = Modifier.padding(bottom = 64.dp)
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f)),
+                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)),
+                modifier = Modifier.fillMaxWidth(0.65f)
             ) {
-                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
                         text = "PROGRESS",
-                        color = Color.White.copy(alpha = 0.6f),
-                        fontSize = 12.sp,
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         letterSpacing = 2.sp
                     )
@@ -58,39 +104,39 @@ fun HomeScreen(viewModel: GameViewModel) {
                 }
             }
 
-            // Navigation Buttons
-            Button(
-                onClick = { viewModel.loadDailyChallenge() },
-                modifier = Modifier.fillMaxWidth().height(64.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFB300)) // Gold
+            Spacer(modifier = Modifier.height(30.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    modifier = Modifier.size(24.dp).padding(end = 8.dp),
-                    tint = Color.White
+                PremiumActionButton(
+                    text = "DAILY CHALLENGE",
+                    icon = Icons.Default.Star,
+                    onClick = { viewModel.loadDailyChallenge() },
+                    containerColor = Color(0xFFFFB300),
+                    contentColor = Color.White,
+                    modifier = Modifier.fillMaxWidth().height(64.dp)
                 )
-                Text("DAILY CHALLENGE", color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-            }
 
-            Spacer(modifier = Modifier.height(16.dp))
+                PremiumActionButton(
+                    text = "START GAME",
+                    icon = Icons.Default.Star,
+                    onClick = { viewModel.enterGame() },
+                    containerColor = Color.White,
+                    contentColor = Color(0xFF0D47A1),
+                    modifier = Modifier.fillMaxWidth().height(64.dp)
+                )
 
-            Button(
-                onClick = { viewModel.enterGame() },
-                modifier = Modifier.fillMaxWidth().height(64.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
-            ) {
-                Text("START GAME", color = Color(0xFF0D47A1), fontWeight = FontWeight.ExtraBold, fontSize = 18.sp)
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedButton(
-                onClick = { viewModel.quitApp() },
-                modifier = Modifier.fillMaxWidth().height(64.dp),
-                border = androidx.compose.foundation.BorderStroke(2.dp, Color.White.copy(alpha = 0.5f))
-            ) {
-                Text("QUIT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                OutlinedButton(
+                    onClick = { viewModel.quitApp() },
+                    modifier = Modifier.fillMaxWidth().height(58.dp),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(18.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.5.dp, Color.White.copy(alpha = 0.55f)),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                ) {
+                    Text("QUIT", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp, letterSpacing = 1.5.sp)
+                }
             }
         }
     }
