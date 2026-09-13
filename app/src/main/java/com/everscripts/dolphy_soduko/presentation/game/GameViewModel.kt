@@ -247,18 +247,36 @@ class GameViewModel(
             return
         }
 
+        if (s.isAdsRemoved) {
+            getHint()
+            return
+        }
+
         if (s.isDailyChallenge) {
+            // Daily Challenge Priority: Coins (20) -> Ads
             if (s.starsBalance >= 20) {
                 viewModelScope.launch {
                     settingsRepository.spendStars(20)
                     getHint()
                 }
             } else {
-                // Trigger a generic event or use a state flag for UI feedback
-                Log.d("GameViewModel", "Insufficient stars for Daily Challenge hint")
+                _state.update { it.copy(requestHintAd = true) }
             }
         } else {
-            getHint()
+            // Normal Level Priority: 5 Free -> Coins (10) -> Ads
+            if (s.freeHintsUsed < 5) {
+                viewModelScope.launch {
+                    settingsRepository.incrementFreeHints()
+                    getHint()
+                }
+            } else if (s.starsBalance >= 10) {
+                viewModelScope.launch {
+                    settingsRepository.spendStars(10)
+                    getHint()
+                }
+            } else {
+                _state.update { it.copy(requestHintAd = true) }
+            }
         }
     }
 

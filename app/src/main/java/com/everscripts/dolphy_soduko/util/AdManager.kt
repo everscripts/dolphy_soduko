@@ -20,8 +20,8 @@ class AdManager(private val context: Context) {
     private var levelCount = 0
 
     // Google Test IDs (Swap these for production IDs before publishing)
-    private val INTERSTITIAL_ID = "ca-app-pub-6166817938980403/2536283517"
-    private val REWARDED_ID = "ca-app-pub-6166817938980403/8910120170"
+    private val INTERSTITIAL_ID = "ca-app-pub-3940256099942544/1033173712"
+    private val REWARDED_ID = "ca-app-pub-3940256099942544/5224354917"
 
     init {
         MobileAds.initialize(context) {}

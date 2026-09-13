@@ -39,7 +39,7 @@ import androidx.compose.material.icons.outlined.Settings
 import com.everscripts.dolphy_soduko.presentation.game.components.BottleView
 import com.everscripts.dolphy_soduko.presentation.game.components.FluidPourStream
 import com.everscripts.dolphy_soduko.presentation.game.components.PremiumActionButton
-import com.everscripts.dolphy_soduko.presentation.game.components.PremiumCoinBalance
+import com.everscripts.dolphy_soduko.presentation.game.components.PremiumCoinBalance as SharedCoinBalance
 import com.everscripts.dolphy_soduko.presentation.game.components.CoinCollectionAnimation
 
 import androidx.compose.ui.graphics.Brush
@@ -81,46 +81,23 @@ fun GameScreen(viewModel: GameViewModel) {
                 .padding(bottom = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header
+            // --- REFACTORED HEADER: TWO ROWS ---
+            
+            // ROW 1: Level & Coin Box
             Row(
                 modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Left side: Progressive Title & Menu Icons
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    IconButton(
-                        onClick = { viewModel.exitGame() },
-                        modifier = Modifier.size(38.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
-                    ) {
-                        Icon(Icons.Outlined.Home, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                    }
-                    
-                    Column(horizontalAlignment = Alignment.Start) {
-                        Text(
-                            text = "FISHY",
-                            color = Color.White.copy(alpha = 0.95f),
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Black,
-                            letterSpacing = 2.sp
-                        )
-                        Card(
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(containerColor = Color.White.copy(alpha = 0.08f))
-                        ) {
-                            Text(
-                                text = if (state.isDailyChallenge) "DAILY CHALLENGE" else "LEVEL ${state.level}",
-                                color = if (state.isDailyChallenge) Color(0xFFFFD166) else Color.White.copy(alpha = 0.7f),
-                                fontSize = 9.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = if (state.isDailyChallenge) "DAILY CHALLENGE" else "LEVEL ${state.level}",
+                    color = if (state.isDailyChallenge) Color(0xFFFFD166) else Color.White,
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = 1.sp
+                )
 
-                // Middle/Right: Unified Coin Box in Header
-                PremiumCoinBalance(
+                SharedCoinBalance(
                     balance = state.starsBalance,
                     modifier = Modifier
                         .onGloballyPositioned {
@@ -128,108 +105,136 @@ fun GameScreen(viewModel: GameViewModel) {
                             coinBoxOffset = Offset(pos.x + it.size.width / 2f, pos.y + it.size.height / 2f)
                         }
                 )
+            }
 
-                // Right side: Game Controls
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Box(contentAlignment = Alignment.Center) {
-                        IconButton(
-                            onClick = { viewModel.requestHint() },
-                            enabled = !state.isHintLoading,
-                            modifier = Modifier.size(38.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Icon(Icons.Outlined.Lightbulb, null, tint = if (state.isDailyChallenge) Color(0xFFFFD166) else Color.White, modifier = Modifier.size(if (state.isDailyChallenge) 16.dp else 18.dp))
-                                if (state.isDailyChallenge) {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(Icons.Default.Star, null, tint = Color(0xFFFFD166), modifier = Modifier.size(8.dp))
-                                        Text("20", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Bold)
-                                    }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // ROW 2: Action Icons (Home, Hint, Reload, Settings)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(
+                    onClick = { viewModel.exitGame() },
+                    modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
+                ) {
+                    Icon(Icons.Outlined.Home, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+
+                Box(contentAlignment = Alignment.Center) {
+                    IconButton(
+                        onClick = { viewModel.requestHint() },
+                        enabled = !state.isHintLoading,
+                        modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Icon(Icons.Outlined.Lightbulb, null, tint = if (state.isDailyChallenge) Color(0xFFFFD166) else Color.White, modifier = Modifier.size(if (state.isDailyChallenge) 16.dp else 18.dp))
+                            if (state.isDailyChallenge) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Default.Star, null, tint = Color(0xFFFFD166), modifier = Modifier.size(8.dp))
+                                    Text("20", color = Color.White, fontSize = 7.sp, fontWeight = FontWeight.Bold)
                                 }
                             }
                         }
-                        if (state.isHintLoading) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), color = Color(0xFFFFD166), strokeWidth = 2.dp)
-                        }
                     }
+                    if (state.isHintLoading) {
+                        CircularProgressIndicator(modifier = Modifier.size(26.dp), color = Color(0xFFFFD166), strokeWidth = 2.dp)
+                    }
+                }
 
+                IconButton(
+                    onClick = { viewModel.resetLevel() },
+                    modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
+                ) {
+                    Icon(Icons.Outlined.Refresh, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+
+                Box {
                     IconButton(
-                        onClick = { viewModel.resetLevel() },
-                        modifier = Modifier.size(38.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
+                        onClick = { showSettings = true },
+                        modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
                     ) {
-                        Icon(Icons.Outlined.Refresh, null, tint = Color.White, modifier = Modifier.size(18.dp))
+                        Icon(Icons.Outlined.Settings, null, tint = Color.White, modifier = Modifier.size(20.dp))
                     }
 
-                    Box {
-                        IconButton(
-                            onClick = { showSettings = true },
-                            modifier = Modifier.size(38.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
-                        ) {
-                            Icon(Icons.Outlined.Settings, null, tint = Color.White, modifier = Modifier.size(18.dp))
-                        }
+                    DropdownMenu(
+                        expanded = showSettings,
+                        onDismissRequest = { showSettings = false },
+                        modifier = Modifier
+                            .background(Color(0xFF1B262C).copy(alpha = 0.95f))
+                            .border(1.dp, Color.White.copy(alpha = 0.1f), MaterialTheme.shapes.medium)
+                            .padding(4.dp)
+                    ) {
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Ambient Music", color = Color.White, fontSize = 14.sp)
+                                    Spacer(Modifier.weight(1f))
+                                    Switch(checked = state.bgmEnabled, onCheckedChange = { viewModel.toggleBgm(it) })
+                                }
+                            },
+                            onClick = {}
+                        )
+                        DropdownMenuItem(
+                            text = {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text("Haptic Feedback", color = Color.White, fontSize = 14.sp)
+                                    Spacer(Modifier.weight(1f))
+                                    Switch(checked = state.hapticsEnabled, onCheckedChange = { viewModel.toggleHaptics(it) })
+                                }
+                            },
+                            onClick = {}
+                        )
 
-                        DropdownMenu(
-                            expanded = showSettings,
-                            onDismissRequest = { showSettings = false },
-                            modifier = Modifier
-                                .background(Color(0xFF1B262C).copy(alpha = 0.95f))
-                                .border(1.dp, Color.White.copy(alpha = 0.1f), MaterialTheme.shapes.medium)
-                                .padding(4.dp)
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Ambient Music", color = Color.White, fontSize = 14.sp)
-                                        Spacer(Modifier.weight(1f))
-                                        Switch(checked = state.bgmEnabled, onCheckedChange = { viewModel.toggleBgm(it) })
-                                    }
-                                },
-                                onClick = {}
-                            )
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Haptic Feedback", color = Color.White, fontSize = 14.sp)
-                                        Spacer(Modifier.weight(1f))
-                                        Switch(checked = state.hapticsEnabled, onCheckedChange = { viewModel.toggleHaptics(it) })
-                                    }
-                                },
-                                onClick = {}
-                            )
+                        HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 8.dp))
 
-                            HorizontalDivider(color = Color.White.copy(alpha = 0.05f), modifier = Modifier.padding(vertical = 8.dp))
-
-                            DropdownMenuItem(
-                                text = {
-                                    Column {
-                                        Text("AQUARIUM THEME", color = Color.White.copy(alpha = 0.4f), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                                        Spacer(Modifier.height(12.dp))
-                                        Row {
-                                            waterColors.forEach { (hex, color) ->
-                                                Box(
-                                                    modifier = Modifier
-                                                        .padding(end = 10.dp)
-                                                        .size(32.dp)
-                                                        .clip(CircleShape)
-                                                        .background(color)
-                                                        .border(
-                                                            width = if (state.waterColorHex == hex) 2.dp else 0.dp,
-                                                            color = Color.White,
-                                                            shape = CircleShape
-                                                        )
-                                                        .clickable { viewModel.updateWaterColor(hex) }
-                                                )
-                                            }
+                        DropdownMenuItem(
+                            text = {
+                                Column {
+                                    Text("AQUARIUM THEME", color = Color.White.copy(alpha = 0.4f), fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                                    Spacer(Modifier.height(12.dp))
+                                    Row {
+                                        waterColors.forEach { (hex, color) ->
+                                            Box(
+                                                modifier = Modifier
+                                                    .padding(end = 10.dp)
+                                                    .size(32.dp)
+                                                    .clip(CircleShape)
+                                                    .background(color)
+                                                    .border(
+                                                        width = if (state.waterColorHex == hex) 2.dp else 0.dp,
+                                                        color = Color.White,
+                                                        shape = CircleShape
+                                                    )
+                                                    .clickable { viewModel.updateWaterColor(hex) }
+                                            )
                                         }
                                     }
-                                },
-                                onClick = {}
-                            )
-                        }
+                                }
+                            },
+                            onClick = {}
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // LEVEL PROGRESS BAR (Bottles Solved)
+            val solvedBottles = state.bottles.count { it.isSolved }
+            val totalBottles = state.bottles.size
+            LinearProgressIndicator(
+                progress = { if (totalBottles > 0) solvedBottles.toFloat() / totalBottles.toFloat() else 0f },
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .height(6.dp)
+                    .clip(RoundedCornerShape(3.dp)),
+                color = Color(0xFFB2EBF2), // Light teal
+                trackColor = Color.White.copy(alpha = 0.05f)
+            )
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             // Game Grid
             Box(

@@ -35,6 +35,7 @@ Rules:
 18. Avoid unnecessary abstraction.
 19. Write unit tests for game rules and solver.
 20. Preserve existing functionality when modifying code.
-
+21. THeme should be consistent across the app. Theme must be scalable.
+22. The design should be multiple device friendly. it should not overlap or break on different screen sizes and orientations.
 Before changing code:
 - Understand
