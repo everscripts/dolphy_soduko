@@ -1,5 +1,6 @@
 package com.everscripts.dolphy_soduko
 
+import com.everscripts.dolphy_soduko.data.repository.PlayGamesCloudSaveRepository
 import android.widget.Toast
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -35,7 +36,8 @@ class MainActivity : ComponentActivity() {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 val settingsRepository = SettingsRepository(applicationContext)
-                return GameViewModel(settingsRepository) as T
+                val cloudSaveRepository = PlayGamesCloudSaveRepository(socialManager)
+                return GameViewModel(settingsRepository, cloudSaveRepository) as T
             }
         }
     }

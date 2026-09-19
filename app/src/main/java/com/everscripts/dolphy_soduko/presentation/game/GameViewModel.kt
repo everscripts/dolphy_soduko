@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.everscripts.dolphy_soduko.data.repository.SettingsRepository
+import com.everscripts.dolphy_soduko.domain.repository.CloudSaveRepository
 import com.everscripts.dolphy_soduko.domain.logic.GameSolver
 import com.everscripts.dolphy_soduko.domain.logic.LevelGenerator
 import com.everscripts.dolphy_soduko.domain.logic.PourRuleEngine
@@ -52,7 +53,8 @@ data class GameState(
 )
 
 class GameViewModel(
-    private val settingsRepository: SettingsRepository
+    private val settingsRepository: SettingsRepository,
+    private val cloudSaveRepository: CloudSaveRepository? = null
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(GameState())
@@ -109,7 +111,16 @@ class GameViewModel(
 
         // Load level once at startup
         viewModelScope.launch {
-            val savedLevel = settingsRepository.currentLevel.first()
+            // Priority: Cloud Save -> Local Save
+            val cloudProgress = cloudSaveRepository?.loadProgress()
+            val savedLevel = if (cloudProgress != null) {
+                if (cloudProgress.first > settingsRepository.currentLevel.first()) {
+                    settingsRepository.addStars(cloudProgress.second - settingsRepository.starsBalance.first())
+                    cloudProgress.first
+                } else settingsRepository.currentLevel.first()
+            } else {
+                settingsRepository.currentLevel.first()
+            }
             loadLevel(savedLevel)
         }
     }
@@ -204,6 +215,7 @@ class GameViewModel(
                     val isWon = PourRuleEngine.isGameWon(currentBottles)
                     if (isWon && !currentState.isDailyChallenge) {
                         settingsRepository.addStars(10)
+                        cloudSaveRepository?.saveProgress(_state.value.level + 1, _state.value.starsBalance + 10)
                     }
 
                     _state.update { it.copy(
