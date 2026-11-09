@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Undo
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Lightbulb
 import androidx.compose.material.icons.outlined.Refresh
@@ -120,6 +121,13 @@ fun GameScreen(viewModel: GameViewModel) {
                     modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
                 ) {
                     Icon(Icons.Outlined.Home, null, tint = Color.White, modifier = Modifier.size(20.dp))
+                }
+
+                IconButton(
+                    onClick = { viewModel.undo() },
+                    modifier = Modifier.size(44.dp).background(Color.White.copy(alpha = 0.08f), CircleShape)
+                ) {
+                    Icon(Icons.Default.Undo, null, tint = Color.White, modifier = Modifier.size(20.dp))
                 }
 
                 Box(contentAlignment = Alignment.Center) {

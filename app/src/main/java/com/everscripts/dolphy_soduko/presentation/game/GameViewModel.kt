@@ -63,6 +63,7 @@ class GameViewModel(
     private lateinit var levelGenerator: LevelGenerator
     private var hintJob: Job? = null
     private var lastKnownStarsBalance: Int = 0
+    private val moveHistory = mutableListOf<List<Bottle>>()
 
     init {
         viewModelScope.launch {
@@ -127,6 +128,7 @@ class GameViewModel(
 
     fun loadLevel(level: Int) {
         hintJob?.cancel()
+        moveHistory.clear()
         levelGenerator = LevelGenerator(seed = level.toLong())
         val bottles = levelGenerator.generate(level)
         _state.update { it.copy(
@@ -145,6 +147,7 @@ class GameViewModel(
 
     fun loadDailyChallenge() {
         hintJob?.cancel()
+        moveHistory.clear()
         _state.update { it.copy(isAnimating = true) } 
         
         viewModelScope.launch {
@@ -166,6 +169,20 @@ class GameViewModel(
         }
     }
 
+    fun undo() {
+        val currentState = _state.value
+        if (currentState.isWon || currentState.isAnimating || moveHistory.isEmpty()) return
+        hintJob?.cancel()
+        val previousBottles = moveHistory.removeAt(moveHistory.size - 1)
+        _state.update { it.copy(
+            bottles = previousBottles,
+            selectedBottleId = null,
+            hint = null,
+            isHintLoading = false,
+            isWon = false
+        ) }
+    }
+
     fun onBottleClick(bottleId: Int) {
         val currentState = _state.value
         if (currentState.isWon || currentState.isAnimating) return
@@ -185,6 +202,7 @@ class GameViewModel(
             val targetBottle = currentState.bottles.find { it.id == bottleId }!!
 
             if (PourRuleEngine.canPour(sourceBottle, targetBottle)) {
+                moveHistory.add(currentState.bottles)
                 val totalPourCount = PourRuleEngine.calculatePourCount(sourceBottle, targetBottle)
                 
                 viewModelScope.launch {
@@ -265,27 +283,14 @@ class GameViewModel(
         }
 
         if (s.isDailyChallenge) {
-            // Daily Challenge Priority: Coins (20) -> Ads
             if (s.starsBalance >= 20) {
-                viewModelScope.launch {
-                    settingsRepository.spendStars(20)
-                    getHint()
-                }
+                getHint()
             } else {
                 _state.update { it.copy(requestHintAd = true) }
             }
         } else {
-            // Normal Level Priority: 5 Free -> Coins (10) -> Ads
-            if (s.freeHintsUsed < 5) {
-                viewModelScope.launch {
-                    settingsRepository.incrementFreeHints()
-                    getHint()
-                }
-            } else if (s.starsBalance >= 10) {
-                viewModelScope.launch {
-                    settingsRepository.spendStars(10)
-                    getHint()
-                }
+            if (s.freeHintsUsed < 5 || s.starsBalance >= 10) {
+                getHint()
             } else {
                 _state.update { it.copy(requestHintAd = true) }
             }
@@ -370,9 +375,23 @@ class GameViewModel(
                 if (solution != null && solution.isNotEmpty()) {
                     val hintMove = solution.first()
                     Log.d("GameViewModel", "Hint found: ${hintMove.fromId} -> ${hintMove.toId}")
+                    val s = _state.value
+                    if (!s.isAdsRemoved) {
+                        if (s.isDailyChallenge) {
+                            if (s.starsBalance >= 20) {
+                                settingsRepository.spendStars(20)
+                            }
+                        } else {
+                            if (s.freeHintsUsed < 5) {
+                                settingsRepository.incrementFreeHints()
+                            } else if (s.starsBalance >= 10) {
+                                settingsRepository.spendStars(10)
+                            }
+                        }
+                    }
                     _state.update { it.copy(hint = hintMove) }
                 } else {
-                    Log.d("GameViewModel", "No hint found or search limit reached")
+                    Log.d("GameViewModel", "No hint found or search limit reached. Coins not reduced.")
                 }
             } catch (e: CancellationException) {
                 Log.d("GameViewModel", "Hint search cancelled")
